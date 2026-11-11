@@ -197,7 +197,9 @@ ludoteca-performance-e-tuning-de-dados/
         ├── ludoteca.js
         ├── monitor.html        → Monitor dos Bancos (os 3 bancos ao vivo)
         ├── monitor.css
-        └── monitor.js
+        ├── monitor.js
+        ├── explorador.css      → seção "Explorar os dados" do Monitor
+        └── explorador.js       → tabela (PostgreSQL), JSON (MongoDB) e grafo desenhado (Neo4j)
 ```
 
 ---
@@ -266,7 +268,9 @@ Agricola, Patchwork, Splendor, Wingspan, Codenames e Dixit) no MongoDB e, logo e
 | API de Jogadores (PostgreSQL) | http://localhost:4001/saude |
 | API do Acervo (MongoDB) | http://localhost:4002/saude |
 | API de Afinidades (Neo4j) | http://localhost:4003/saude |
-| **Neo4j Browser** (visualiza o grafo) | http://localhost:7474 (login `neo4j` / senha `ludoteca123`) |
+| **Adminer** (tabelas do PostgreSQL) | http://localhost:8082 (veja o login na seção abaixo) |
+| **Mongo Express** (documentos JSON do MongoDB) | http://localhost:8081 (abre direto, sem login) |
+| **Neo4j Browser** (desenha o grafo) | http://localhost:7474 (login `neo4j` / senha `ludoteca123`) |
 
 ### Parar e limpar
 
@@ -288,7 +292,11 @@ docker compose down -v     # para tudo e APAGA os dados (volta do zero; depois r
      pelas mecânicas em comum.
    - Favoritar, ver o Histórico e voltar ao Início para ver o ranking **"Jogos mais vistos"**.
 3. **Monitor dos Bancos** em http://localhost:8080/monitor.html: clicar nos 4 botões e mostrar os números de cada banco
-   mudando em tempo real (atualiza a cada 3 s).
+   mudando em tempo real (atualiza a cada 3 s). Depois, descer até **"🔎 Explorar os dados"** e passar pelas 3 abas:
+   a tabela `jogadores` no PostgreSQL, o documento JSON do 7 Wonders no MongoDB e o grafo desenhado no Neo4j
+   (clique no Hanabi para recentralizar).
+   Se quiser mostrar as ferramentas "oficiais", abra o **Adminer** (http://localhost:8082) e o **Mongo Express**
+   (http://localhost:8081). Veja a seção [Vendo os bancos de forma visual](#-vendo-os-bancos-de-forma-visual).
 4. **Neo4j Browser** em http://localhost:7474 (`neo4j` / `ludoteca123`):
 
    ```cypher
@@ -353,7 +361,33 @@ Página de demonstração em http://localhost:8080/monitor.html (ou pelo botão 
   - *Cadastrar jogo de teste* → `POST :4002/jogos` → MongoDB (e o grafo é atualizado sozinho)
   - *Simular visualização* → `POST :4001/visualizacoes` → PostgreSQL (ranking)
   - *Reconstruir grafo* → `POST :4003/sync` → Neo4j
-- **console de log** mostrando qual API foi chamada e o resultado.
+- **console de log** mostrando qual API foi chamada e o resultado;
+- seção **🔎 Explorar os dados**, com uma aba por banco, mostrando o dado no formato em que cada banco guarda:
+  - **PostgreSQL**: tabela com linhas e colunas (`jogadores`, ranking de `visualizacoes`, totais) e o SQL equivalente;
+  - **MongoDB**: lista dos documentos da coleção `jogos` e o **JSON completo** do documento escolhido, colorido;
+  - **Neo4j**: a vizinhança de um jogo **desenhada como grafo** (mecânicas, designers e jogos parecidos), com o Cypher
+    equivalente para colar no Neo4j Browser.
+
+---
+
+## 👀 Vendo os bancos de forma visual
+
+Além do Monitor, cada banco tem uma interface web própria, que sobe junto no `docker compose up`:
+
+| Banco | Ferramenta | Endereço | Como entrar |
+|-------|-----------|----------|-------------|
+| PostgreSQL | **Adminer** | http://localhost:8082 | Sistema **PostgreSQL**, servidor `postgres`, usuário `ludoteca`, senha `ludoteca123`, base `ludoteca` |
+| MongoDB | **Mongo Express** | http://localhost:8081 | abre direto; clique em `ludoteca` → `jogos` |
+| Neo4j | **Neo4j Browser** | http://localhost:7474 | usuário `neo4j`, senha `ludoteca123` |
+
+- **Adminer**: clique numa tabela (`jogadores`, `favoritos`, `visualizacoes`) e em **"Selecionar dados"** para ver as
+  linhas; em **"Comando SQL"** dá para rodar as consultas da seção de tuning, inclusive o `EXPLAIN ANALYZE`.
+  O botão **"Abrir no Adminer"** do Monitor já abre com PostgreSQL, servidor, usuário e base preenchidos: só falta digitar a senha.
+- **Mongo Express**: mostra cada documento da coleção `jogos` em JSON, com as listas e as expansões aninhadas, e
+  também os **índices** da coleção (`busca_textual`, `categoria_1_criadoEm_-1`...).
+- **Neo4j Browser**: rode `MATCH (j:Jogo)-[r]->(x) RETURN j, r, x` e arraste os nós para explorar o grafo.
+
+> As três interfaces são só para demonstração local: o Mongo Express, por exemplo, não pede senha.
 
 ---
 
@@ -438,7 +472,7 @@ curl -X POST http://localhost:4003/sync
 
 | Sintoma | Solução |
 |---------|---------|
-| `port is already allocated` ao subir | Alguma porta (8080, 4001–4003, 5432, 27017, 7474, 7687) já está em uso na máquina. Feche o programa que usa a porta ou troque o lado esquerdo do mapeamento no `docker-compose.yml` (ex.: `"8081:80"`). |
+| `port is already allocated` ao subir | Alguma porta (8080, 8081, 8082, 4001–4003, 5432, 27017, 7474, 7687) já está em uso na máquina. Feche o programa que usa a porta ou troque o lado esquerdo do mapeamento no `docker-compose.yml` (ex.: `"8090:80"`). |
 | "Jogos parecidos" não aparece | O grafo está vazio. Rode `docker compose exec acervo-api npm run seed` ou clique em *Reconstruir grafo* no Monitor. |
 | `afinidades-api` reiniciando no começo | O Neo4j ainda está subindo. Espere ~1 minuto. |
 | Cartão do Monitor vermelho (offline) | O serviço daquele banco caiu. Veja o log com `docker compose logs <servico>` (ex.: `docker compose logs afinidades-api`). |

@@ -10,6 +10,7 @@
   <!-- primeiro o tema base (compartilhado com o app), depois só o que é do monitor -->
   <link rel="stylesheet" href="estilo.css">
   <link rel="stylesheet" href="monitor.css">
+  <link rel="stylesheet" href="explorador.css">
 </head>
 <body>
 
@@ -224,7 +225,94 @@
       </div>
     </section>
 
-    <!-- 4. RODAPÉ: NEO4J BROWSER ========================================== -->
+    <!-- 4. EXPLORADOR: OS DADOS DE CADA BANCO, DO JEITO QUE CADA UM GUARDA === -->
+    <section class="secao-monitor explorador" aria-labelledby="titulo-explorador">
+      <div class="secao-cabecalho">
+        <h2 id="titulo-explorador">🔎 Explorar os dados</h2>
+        <p>Tabela no PostgreSQL, documento JSON no MongoDB e grafo no Neo4j: o mesmo sistema visto por dentro de cada banco.</p>
+      </div>
+
+      <div class="abas-explorador" role="tablist" aria-label="Escolha o banco">
+        <button type="button" role="tab" class="aba-explorador banco-postgres" id="aba-postgres"
+                aria-controls="conteudo-postgres" aria-selected="true" data-aba="postgres">🐘 PostgreSQL <small>tabelas</small></button>
+        <button type="button" role="tab" class="aba-explorador banco-mongo" id="aba-mongo"
+                aria-controls="conteudo-mongo" aria-selected="false" tabindex="-1" data-aba="mongo">🍃 MongoDB <small>documentos JSON</small></button>
+        <button type="button" role="tab" class="aba-explorador banco-neo4j" id="aba-neo4j"
+                aria-controls="conteudo-neo4j" aria-selected="false" tabindex="-1" data-aba="neo4j">🕸️ Neo4j <small>grafo</small></button>
+      </div>
+
+      <!-- PostgreSQL: linhas e colunas -->
+      <div class="conteudo-aba banco-postgres" id="conteudo-postgres" role="tabpanel" aria-labelledby="aba-postgres">
+        <div class="barra-explorador">
+          <label class="campo-explorador">Tabela / consulta
+            <select id="pg-consulta">
+              <option value="jogadores">jogadores</option>
+              <option value="ranking">visualizacoes (agrupadas: ranking)</option>
+              <option value="estatisticas">totais das 3 tabelas</option>
+            </select>
+          </label>
+          <button type="button" class="botao botao-pequeno botao-contorno" data-recarregar="postgres">↻ Recarregar</button>
+          <a class="botao botao-pequeno botao-secundario" id="link-adminer" href="http://localhost:8082/?pgsql=postgres&amp;username=ludoteca&amp;db=ludoteca&amp;ns=public"
+             target="_blank" rel="noopener noreferrer">Abrir no Adminer ↗</a>
+        </div>
+        <div class="bloco-consulta consulta-equivalente">
+          <pre><code id="pg-sql">—</code></pre>
+          <button type="button" class="botao botao-pequeno botao-contorno" data-copiar="pg-sql">Copiar SQL</button>
+        </div>
+        <div class="area-tabela" id="pg-tabela"><p class="vazio">Abra a aba para carregar.</p></div>
+        <details class="json-bruto">
+          <summary>Ver a resposta JSON da API</summary>
+          <pre class="json-colorido" id="pg-json"></pre>
+        </details>
+      </div>
+
+      <!-- MongoDB: lista de documentos + o documento selecionado em JSON -->
+      <div class="conteudo-aba banco-mongo" id="conteudo-mongo" role="tabpanel" aria-labelledby="aba-mongo" hidden>
+        <div class="barra-explorador">
+          <label class="campo-explorador">Filtrar documentos
+            <input type="search" id="mongo-filtro" placeholder="nome do jogo…" autocomplete="off">
+          </label>
+          <button type="button" class="botao botao-pequeno botao-contorno" data-recarregar="mongo">↻ Recarregar</button>
+          <a class="botao botao-pequeno botao-secundario" id="link-mongo-express" href="http://localhost:8081/db/ludoteca/jogos"
+             target="_blank" rel="noopener noreferrer">Abrir no Mongo Express ↗</a>
+        </div>
+        <div class="grade-documentos">
+          <ul class="lista-documentos" id="mongo-lista" aria-label="Documentos da coleção jogos"><li class="vazio">Abra a aba para carregar.</li></ul>
+          <div class="documento-aberto">
+            <div class="bloco-consulta consulta-equivalente">
+              <pre><code id="mongo-consulta">db.jogos.findOne({ _id: … })</code></pre>
+              <button type="button" class="botao botao-pequeno botao-contorno" data-copiar="mongo-consulta">Copiar</button>
+            </div>
+            <pre class="json-colorido json-grande" id="mongo-json">Escolha um documento na lista.</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Neo4j: vizinhança de um jogo desenhada em SVG -->
+      <div class="conteudo-aba banco-neo4j" id="conteudo-neo4j" role="tabpanel" aria-labelledby="aba-neo4j" hidden>
+        <div class="barra-explorador">
+          <label class="campo-explorador">Jogo no centro do grafo
+            <select id="neo-jogo"><option value="">carregando…</option></select>
+          </label>
+          <button type="button" class="botao botao-pequeno botao-contorno" data-recarregar="neo4j">↻ Recarregar</button>
+          <a class="botao botao-pequeno botao-secundario" id="link-neo4j-browser-explorador" href="http://localhost:7474"
+             target="_blank" rel="noopener noreferrer">Abrir no Neo4j Browser ↗</a>
+        </div>
+        <div class="bloco-consulta consulta-equivalente">
+          <pre><code id="neo-cypher">—</code></pre>
+          <button type="button" class="botao botao-pequeno botao-contorno" data-copiar="neo-cypher">Copiar Cypher</button>
+        </div>
+        <div class="area-grafo" id="neo-grafo"><p class="vazio">Abra a aba para carregar.</p></div>
+        <ul class="legenda-grafo" aria-label="Legenda do grafo">
+          <li><span class="bolinha bolinha-centro"></span>jogo escolhido</li>
+          <li><span class="bolinha bolinha-mecanica"></span>:Mecanica</li>
+          <li><span class="bolinha bolinha-designer"></span>:Designer</li>
+          <li><span class="bolinha bolinha-parecido"></span>jogo parecido (clique pra centralizar)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 5. RODAPÉ: NEO4J BROWSER ========================================== -->
     <section class="rodape-monitor" aria-labelledby="titulo-browser">
       <h2 id="titulo-browser">🔍 Quer ver o grafo desenhado?</h2>
       <p>O Neo4j vem com uma interface web própria, ótima pra mostrar as ligações na apresentação.</p>
@@ -255,5 +343,7 @@
   <!-- config.js primeiro: ele define window.LUDOTECA_API, que o monitor.js lê -->
   <script src="config.js"></script>
   <script src="monitor.js"></script>
+  <!-- explorador.js usa API, buscarJson, escaparHtml e capitalizar do monitor.js -->
+  <script src="explorador.js"></script>
 </body>
 </html>

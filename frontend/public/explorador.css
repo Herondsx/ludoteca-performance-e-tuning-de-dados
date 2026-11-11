@@ -1,0 +1,344 @@
+/* explorador.css — seção "Explorar os dados" do Monitor
+   Usa os tokens do estilo.css e as cores de banco do monitor.css
+   (.banco-postgres / .banco-mongo / .banco-neo4j definem --cor-banco). */
+
+/* ================================== ABAS ================================== */
+
+.abas-explorador {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-bottom: -1px; /* encosta a aba ativa no conteúdo */
+}
+
+.aba-explorador {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .4rem;
+  padding: .65rem 1.1rem;
+  border: 1px solid var(--borda);
+  border-bottom: none;
+  border-radius: var(--raio) var(--raio) 0 0;
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.aba-explorador small {
+  font-weight: 500;
+  font-size: .78rem;
+}
+
+.aba-explorador:hover { color: var(--texto); }
+
+.aba-explorador[aria-selected="true"] {
+  background: var(--superficie);
+  color: var(--cor-banco);
+  box-shadow: inset 0 3px 0 var(--cor-banco);
+}
+
+.aba-explorador:focus-visible {
+  outline: 3px solid var(--cor-banco);
+  outline-offset: 2px;
+}
+
+/* ============================ CONTEÚDO DA ABA ============================= */
+
+.conteudo-aba {
+  padding: 1.25rem;
+  border: 1px solid var(--borda);
+  border-top: 4px solid var(--cor-banco);
+  border-radius: 0 var(--raio) var(--raio) var(--raio);
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+}
+
+.conteudo-aba[hidden] { display: none; }
+
+.barra-explorador {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.campo-explorador {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  flex: 1 1 240px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.campo-explorador select,
+.campo-explorador input {
+  padding: .55rem .7rem;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  font-weight: 500;
+  font-size: .92rem;
+}
+
+.campo-explorador select:focus,
+.campo-explorador input:focus {
+  outline: 2px solid var(--cor-banco);
+  outline-offset: 1px;
+}
+
+.consulta-equivalente { margin-bottom: 1rem; }
+.consulta-equivalente pre { white-space: pre; }
+
+.nota-explorador {
+  margin: .6rem 0 0;
+  font-size: .82rem;
+  color: var(--texto-suave);
+}
+
+.erro-explorador { color: var(--perigo); }
+
+/* ============================== POSTGRESQL ================================ */
+
+.rolagem-tabela {
+  overflow-x: auto;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+}
+
+.tabela-dados {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+}
+
+.tabela-dados th,
+.tabela-dados td {
+  padding: .55rem .8rem;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--borda);
+}
+
+.tabela-dados th {
+  position: sticky;
+  top: 0;
+  background: var(--cor-banco-suave);
+  color: var(--cor-banco);
+  font-family: var(--fonte-mono);
+  font-size: .8rem;
+}
+
+.tabela-dados tbody tr:nth-child(even) { background: rgba(35, 32, 27, .025); }
+.tabela-dados tbody tr:hover { background: var(--cor-banco-suave); }
+.tabela-dados tbody tr:last-child td { border-bottom: none; }
+
+.celula-nula {
+  color: var(--texto-suave);
+  font-style: italic;
+  font-family: var(--fonte-mono);
+}
+
+.json-bruto { margin-top: 1rem; }
+
+.json-bruto summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: .88rem;
+  color: var(--cor-banco);
+}
+
+.json-bruto[open] summary { margin-bottom: .6rem; }
+
+/* ============================ JSON COLORIDO =============================== */
+
+.json-colorido {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border-radius: 10px;
+  background: var(--texto);
+  color: #e8e2d6;
+  font-family: var(--fonte-mono);
+  font-size: .82rem;
+  line-height: 1.55;
+  overflow: auto;
+  max-height: 340px;
+  white-space: pre;
+}
+
+.json-colorido:empty { display: none; }
+.json-grande { max-height: 520px; min-height: 240px; }
+
+.json-chave    { color: #8fd3ff; }
+.json-texto    { color: #b5e48c; }
+.json-numero   { color: #ffb86b; }
+.json-booleano { color: #ff8fc8; }
+.json-nulo     { color: #a5a094; font-style: italic; }
+
+/* =============================== MONGODB ================================== */
+
+.grade-documentos {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.lista-documentos {
+  list-style: none;
+  margin: 0;
+  padding: .35rem;
+  max-height: 600px;
+  overflow-y: auto;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--superficie-2);
+}
+
+.lista-documentos .vazio { padding: .75rem; }
+
+.item-documento {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .1rem;
+  width: 100%;
+  padding: .55rem .7rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item-documento small {
+  color: var(--texto-suave);
+  font-size: .76rem;
+}
+
+.item-documento:hover { background: var(--superficie); }
+
+.item-documento.ativo {
+  background: var(--superficie);
+  border-color: var(--cor-banco);
+  box-shadow: inset 3px 0 0 var(--cor-banco);
+}
+
+.item-documento:focus-visible {
+  outline: 2px solid var(--cor-banco);
+  outline-offset: 1px;
+}
+
+.documento-aberto { min-width: 0; }
+
+/* ================================ NEO4J =================================== */
+
+.area-grafo {
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at center, rgba(1, 139, 255, .06), transparent 65%),
+    var(--superficie);
+  overflow: hidden;
+}
+
+.area-grafo > .vazio { padding: 2rem 1rem; }
+
+.svg-grafo {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 560px;
+}
+
+.aresta { stroke-width: 2; }
+.aresta-mecanica { stroke: #8fb8a3; }
+.aresta-designer { stroke: #b39ad6; }
+.aresta-parecido { stroke: var(--cor-neo4j); stroke-dasharray: 5 4; opacity: .55; }
+
+.no circle { stroke: #fff; stroke-width: 3; }
+.no-centro circle { fill: var(--coral); }
+.no-mecanica circle { fill: var(--verde-claro); }
+.no-designer circle { fill: #7d5ba6; }
+.no-parecido circle { fill: var(--cor-neo4j); }
+
+.no-parecido { cursor: pointer; }
+.no-parecido:hover circle,
+.no-parecido:focus circle { stroke: var(--texto); }
+.no-parecido:focus { outline: none; }
+
+.rotulo-no {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--texto);
+  paint-order: stroke;
+  stroke: var(--superficie);
+  stroke-width: 4px;
+}
+
+.rotulo-parecido { fill: #0b5cab; }
+
+.rotulo-nome-centro {
+  font-size: 14px;
+  font-weight: 800;
+  fill: var(--coral-escuro);
+}
+
+.rotulo-centro {
+  font-size: 12px;
+  font-weight: 800;
+  fill: #fff;
+  pointer-events: none;
+}
+
+.pontos-no {
+  font-size: 12px;
+  font-weight: 800;
+  fill: #fff;
+  pointer-events: none;
+}
+
+.legenda-grafo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem 1.2rem;
+  margin: .8rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: .82rem;
+  color: var(--texto-suave);
+}
+
+.legenda-grafo li { display: inline-flex; align-items: center; gap: .4rem; }
+
+.bolinha {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.bolinha-centro { background: var(--coral); }
+.bolinha-mecanica { background: var(--verde-claro); }
+.bolinha-designer { background: #7d5ba6; }
+.bolinha-parecido { background: var(--cor-neo4j); }
+
+/* =============================== RESPONSIVO =============================== */
+
+@media (max-width: 760px) {
+  .conteudo-aba { padding: 1rem .8rem; border-radius: 0 0 var(--raio) var(--raio); }
+  .aba-explorador { flex: 1 1 100%; border-radius: 10px; border-bottom: 1px solid var(--borda); }
+  .abas-explorador { margin-bottom: .5rem; }
+  .grade-documentos { grid-template-columns: 1fr; }
+  .lista-documentos { max-height: 220px; }
+  .json-grande { max-height: 420px; min-height: 0; }
+}
