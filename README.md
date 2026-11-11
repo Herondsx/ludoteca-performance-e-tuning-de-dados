@@ -21,7 +21,7 @@
 |------|----|
 | Heron de Souza | 22.223.009-6 |
 | João Mateus E. B. da Silva | 22.223.013-8 |
-| Vinicius Trivellato | _(a preencher)_ |
+| Vinicius Trivellato | 22.223.022-9 |
 
 ---
 
