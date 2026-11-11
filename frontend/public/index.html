@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Ludoteca: catálogo de jogos de tabuleiro com persistência poliglota (PostgreSQL, MongoDB e Neo4j).">
+  <meta name="theme-color" content="#1f4d3a">
+  <title>Ludoteca — catálogo de jogos de tabuleiro</title>
+  <!-- favicon desenhado na hora com SVG + emoji: zero arquivo de imagem extra pra servir -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+  <!-- Cabeçalho: a mesma marcação é usada no monitor.html, por isso as classes ficam no estilo.css -->
+  <header class="topo">
+    <a class="marca" href="index.html#/"><span class="marca-icone">🎲</span><span class="marca-nome">Ludoteca</span></a>
+    <nav class="menu" aria-label="Navegação principal">
+      <a class="menu-link" href="#/" data-rota="inicio">Início</a>
+      <a class="menu-link" href="#/jogos" data-rota="jogos">Jogos</a>
+      <!-- links que só fazem sentido logado começam escondidos; o ludoteca.js mostra quando houver sessão -->
+      <a class="menu-link" href="#/jogos/novo" data-rota="novo" data-somente-logado hidden>+ Novo jogo</a>
+      <a class="menu-link" href="#/favoritos" data-rota="favoritos" data-somente-logado hidden>Favoritos</a>
+      <a class="menu-link" href="#/historico" data-rota="historico" data-somente-logado hidden>Histórico</a>
+      <a class="menu-link menu-link-destaque" href="monitor.html">🛰️ Monitor</a>
+    </nav>
+    <div class="area-conta" id="area-conta"></div>
+  </header>
+
+  <!-- Tudo que muda de tela é desenhado aqui dentro pelo roteador (hash router) -->
+  <main id="app" class="conteudo">
+    <div class="carregando" role="status">
+      <span class="roleta" aria-hidden="true"></span>
+      <span>Montando a mesa…</span>
+    </div>
+  </main>
+
+  <footer class="rodape">
+    <p>🎲 Ludoteca · projeto acadêmico de Performance e Tuning de Dados</p>
+    <p class="rodape-bancos">
+      <span>🐘 PostgreSQL</span><span>🍃 MongoDB</span><span>🕸️ Neo4j</span>
+    </p>
+  </footer>
+
+  <noscript>
+    <p class="vazio">A Ludoteca precisa de JavaScript ligado para funcionar.</p>
+  </noscript>
+
+  <!-- ordem importa: config.js define window.LUDOTECA_API antes do app ler -->
+  <script src="config.js"></script>
+  <script src="ludoteca.js"></script>
+</body>
+</html>

@@ -1,0 +1,797 @@
+/* monitor.css — estilos só do "Monitor dos Bancos"
+   O tema (cores, raio, sombra, fonte, cabeçalho .topo, .botao, .vazio, .conteudo)
+   vem do estilo.css, carregado antes. Aqui entram as cores oficiais de cada banco
+   e o layout dos cartões, do console e das ações de demonstração. */
+
+:root {
+  /* cor "de marca" de cada banco: deixa óbvio na apresentação qual cartão é qual */
+  --cor-postgres: #336791;
+  --cor-mongo: #47A248;
+  --cor-neo4j: #018BFF;
+  --fonte-mono: Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace;
+}
+
+/* cada bloco ligado a um banco herda a cor certa por variável:
+   um único conjunto de regras serve pros três cartões */
+.banco-postgres { --cor-banco: var(--cor-postgres); --cor-banco-suave: rgba(51, 103, 145, .12); --cor-banco-brilho: rgba(51, 103, 145, .35); }
+.banco-mongo    { --cor-banco: var(--cor-mongo);    --cor-banco-suave: rgba(71, 162, 72, .12);  --cor-banco-brilho: rgba(71, 162, 72, .35); }
+.banco-neo4j    { --cor-banco: var(--cor-neo4j);    --cor-banco-suave: rgba(1, 139, 255, .12);  --cor-banco-brilho: rgba(1, 139, 255, .35); }
+
+/* ===================== INDICADOR "AO VIVO" NO CABEÇALHO ===================== */
+
+.indicador-vivo {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  margin-left: auto; /* empurra o "ao vivo" pro canto direito do menu */
+  padding: .3rem .8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .12);
+  color: rgba(255, 255, 255, .92);
+  font-size: .85rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.indicador-ponto {
+  --cor-ponto: #8fe3b0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cor-ponto);
+  animation: pulso-indicador 1.6s ease-out infinite;
+}
+
+.indicador-vivo[data-saude="iniciando"] .indicador-ponto { --cor-ponto: #f4d48a; }
+.indicador-vivo[data-saude="parcial"] .indicador-ponto { --cor-ponto: #f4c25b; }
+.indicador-vivo[data-saude="fora"] .indicador-ponto { --cor-ponto: #ff9a85; }
+
+@keyframes pulso-indicador {
+  0%   { box-shadow: 0 0 0 0 var(--cor-ponto); }
+  70%  { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ============================== ESTRUTURA GERAL ============================== */
+
+.monitor code {
+  font-family: var(--fonte-mono);
+  font-size: .85em;
+}
+
+.secao-monitor {
+  margin-top: 2.25rem;
+}
+
+.secao-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .25rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.secao-cabecalho h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: var(--verde);
+}
+
+.secao-cabecalho p {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: .92rem;
+}
+
+/* ================================ INTRODUÇÃO ================================ */
+
+.intro-monitor {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  padding: 1.75rem 1.75rem 1.5rem;
+}
+
+.sobretitulo {
+  margin: 0 0 .25rem;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--coral-escuro);
+}
+
+.intro-monitor h1 {
+  margin: 0 0 .6rem;
+  font-size: clamp(1.6rem, 3.2vw, 2.2rem);
+  color: var(--verde);
+  line-height: 1.15;
+}
+
+.intro-texto {
+  max-width: 820px;
+  margin: 0;
+  color: var(--texto-suave);
+  line-height: 1.6;
+}
+
+.intro-texto strong { color: var(--texto); }
+
+.legenda-bancos {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .9rem;
+}
+
+.legenda-item {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  padding: .85rem 1rem;
+  border-radius: 10px;
+  background: var(--cor-banco-suave);
+  border-left: 4px solid var(--cor-banco);
+  font-size: .9rem;
+  line-height: 1.45;
+  color: var(--texto-suave);
+}
+
+.legenda-item strong { color: var(--cor-banco); }
+
+.dica-apresentacao {
+  margin: 1.1rem 0 0;
+  padding: .7rem .9rem;
+  border-radius: 10px;
+  background: var(--superficie-2);
+  font-size: .88rem;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}
+
+.dica-apresentacao strong { color: var(--texto); }
+
+/* =========================== AÇÕES DE DEMONSTRAÇÃO =========================== */
+
+.grade-acoes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .9rem;
+}
+
+.acao-demo {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  width: 100%;
+  padding: 1rem;
+  text-align: left;
+  font: inherit;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-left: 5px solid var(--cor-banco);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.acao-demo:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--cor-banco);
+  box-shadow: 0 10px 24px var(--cor-banco-suave), var(--sombra);
+}
+
+.acao-demo:focus-visible {
+  outline: 3px solid var(--cor-banco-brilho);
+  outline-offset: 2px;
+}
+
+.acao-demo:disabled {
+  cursor: progress;
+  opacity: .65;
+}
+
+/* rodinha girando enquanto a requisição do botão está no ar */
+.acao-demo[aria-busy="true"]::after {
+  content: '';
+  position: absolute;
+  top: .8rem;
+  right: .8rem;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--cor-banco-suave);
+  border-top-color: var(--cor-banco);
+  border-radius: 50%;
+  animation: girar-acao .7s linear infinite;
+}
+
+@keyframes girar-acao {
+  to { transform: rotate(360deg); }
+}
+
+.acao-icone {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 10px;
+  background: var(--cor-banco-suave);
+  font-size: 1.2rem;
+}
+
+.acao-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  min-width: 0;
+}
+
+.acao-titulo {
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.acao-rota {
+  font-family: var(--fonte-mono);
+  font-size: .74rem;
+  color: var(--texto-suave);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+/* ============================ CONSOLE DE EVENTOS ============================ */
+
+/* fundo escuro de propósito: lembra um terminal e destaca do resto da página clara */
+.console-monitor {
+  margin-top: 1rem;
+  border-radius: var(--raio);
+  overflow: hidden;
+  background: var(--texto);
+  box-shadow: var(--sombra);
+}
+
+.console-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .55rem 1rem;
+  background: rgba(255, 255, 255, .06);
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+.console-titulo {
+  color: rgba(255, 255, 255, .85);
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.console-titulo small {
+  font-weight: 400;
+  color: rgba(255, 255, 255, .5);
+}
+
+.console-limpar {
+  font: inherit;
+  font-size: .75rem;
+  color: rgba(255, 255, 255, .75);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: 999px;
+  padding: .15rem .7rem;
+  cursor: pointer;
+}
+
+.console-limpar:hover { color: #fff; border-color: rgba(255, 255, 255, .5); }
+
+.registro-eventos {
+  list-style: none;
+  margin: 0;
+  padding: .6rem 1rem .8rem;
+  min-height: 8.5rem;
+  max-height: 17rem;
+  overflow-y: auto;
+  font-family: var(--fonte-mono);
+  font-size: .8rem;
+  line-height: 1.55;
+}
+
+.registro-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .2rem .55rem;
+  padding: .12rem 0;
+  color: #d9d3c7;
+  animation: entrar-linha .25s ease-out;
+}
+
+.registro-linha[data-tipo="sucesso"] .registro-texto { color: #9be0a6; }
+.registro-linha[data-tipo="erro"] .registro-texto { color: #ff9f8a; }
+.registro-linha[data-tipo="info"] .registro-texto { color: #a9cbe6; }
+
+.registro-hora { color: rgba(255, 255, 255, .4); }
+
+.registro-origem {
+  padding: 0 .4rem;
+  border-radius: 4px;
+  font-size: .7rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--cor-banco);
+}
+
+.registro-texto { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }
+
+@keyframes entrar-linha {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ============================ CARTÕES DOS BANCOS ============================ */
+
+.grade-bancos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.1rem;
+  align-items: stretch;
+}
+
+.cartao-banco {
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
+  min-width: 0;
+  padding: 1.25rem 1.25rem 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-top: 6px solid var(--cor-banco);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  transition: opacity .3s ease;
+}
+
+.cartao-cabeca {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.cartao-icone {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 12px;
+  background: var(--cor-banco-suave);
+  font-size: 1.5rem;
+}
+
+.cartao-identidade {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.cartao-identidade h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--cor-banco);
+}
+
+.cartao-tipo {
+  align-self: flex-start;
+  padding: .05rem .5rem;
+  border-radius: 999px;
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.cartao-papel {
+  margin: -.25rem 0 0;
+  font-size: .82rem;
+  color: var(--texto-suave);
+}
+
+/* bolinha de status: o title mostra o erro quando está offline */
+.luz-status {
+  flex: 0 0 auto;
+  margin-left: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--aviso);
+  cursor: help;
+}
+
+.luz-status[data-estado="verificando"] { animation: piscar-luz 1s ease-in-out infinite alternate; }
+.luz-status[data-estado="online"] {
+  background: var(--sucesso);
+  box-shadow: 0 0 0 4px rgba(46, 125, 50, .18);
+}
+.luz-status[data-estado="offline"] {
+  background: var(--perigo);
+  box-shadow: 0 0 0 4px rgba(192, 57, 43, .18);
+}
+
+@keyframes piscar-luz {
+  from { opacity: .35; }
+  to   { opacity: 1; }
+}
+
+.numero-destaque {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .2rem .6rem;
+}
+
+.numero-grande {
+  display: inline-block;
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--cor-banco);
+  font-variant-numeric: tabular-nums;
+}
+
+.numero-legenda {
+  color: var(--texto-suave);
+  font-size: .9rem;
+}
+
+.mini-estatisticas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: .5rem;
+}
+
+.mini-estatistica {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  min-width: 0;
+  padding: .55rem .7rem;
+  border-radius: 10px;
+  background: var(--superficie-2);
+}
+
+.mini-estatistica strong {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 1.25rem;
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
+}
+
+.mini-estatistica strong.texto-curto {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-estatistica span {
+  font-size: .75rem;
+  color: var(--texto-suave);
+}
+
+.cartao-subtitulo {
+  margin: .2rem 0 -.3rem;
+  padding-top: .75rem;
+  border-top: 1px dashed var(--borda);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+/* ------------------------------- listas ------------------------------- */
+
+.lista-dados {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.dado-linha {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  min-width: 0;
+  padding: .45rem .6rem;
+  border-radius: 8px;
+  background: var(--fundo);
+}
+
+.dado-principal {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dado-titulo {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  font-size: .9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dado-sem-nome {
+  font-weight: 500;
+  font-style: italic;
+  color: var(--texto-suave);
+}
+
+.dado-sub {
+  font-size: .76rem;
+  color: var(--texto-suave);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dado-extra {
+  flex: 0 0 auto;
+  font-size: .78rem;
+  color: var(--texto-suave);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dado-aguardando {
+  padding: .45rem .6rem;
+  font-size: .85rem;
+  color: var(--texto-suave);
+  font-style: italic;
+}
+
+.dado-offline {
+  padding: .55rem .7rem;
+  border-radius: 8px;
+  background: rgba(192, 57, 43, .08);
+  color: var(--perigo);
+  font-size: .83rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* o .vazio do tema foi pensado pra páginas inteiras; dentro do cartão ele fica compacto */
+.cartao-banco .vazio {
+  display: block;
+  margin: 0;
+  padding: .55rem .7rem;
+  border-radius: 8px;
+  border: 1px dashed var(--borda);
+  background: transparent;
+  font-size: .83rem;
+  text-align: left;
+  color: var(--texto-suave);
+}
+
+/* posições do ranking: ouro, prata e bronze pros três primeiros */
+.posicao-ranking {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 50%;
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.posicao-1 { background: #d9a91a; color: #fff; }
+.posicao-2 { background: #9ea7b0; color: #fff; }
+.posicao-3 { background: #b3743f; color: #fff; }
+
+/* barrinhas horizontais (categorias no Mongo, mecânicas no Neo4j) */
+.dado-barra {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+
+.dado-barra-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .6rem;
+  min-width: 0;
+}
+
+.barra-trilho {
+  display: block;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--superficie-2);
+  overflow: hidden;
+}
+
+.barra-preenchida {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--cor-banco);
+  transition: width .5s ease;
+}
+
+.rodape-cartao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-top: auto; /* gruda o rodapé embaixo mesmo com cartões de alturas diferentes */
+  padding-top: .75rem;
+  border-top: 1px solid var(--borda);
+  font-size: .76rem;
+  color: var(--texto-suave);
+}
+
+.rodape-cartao code {
+  padding: .1rem .4rem;
+  border-radius: 6px;
+  background: var(--superficie-2);
+  overflow-wrap: anywhere;
+}
+
+.tempo-resposta {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --------------------------- estados e animações --------------------------- */
+
+.cartao-banco.fora-do-ar .numero-grande,
+.cartao-banco.fora-do-ar .mini-estatistica strong {
+  color: var(--texto-suave);
+}
+
+.cartao-banco.fora-do-ar .barra-trilho { opacity: .4; }
+
+/* piscada quando algum número do cartão muda */
+.cartao-banco.cartao-piscando {
+  animation: piscar-cartao 1s ease-out;
+}
+
+@keyframes piscar-cartao {
+  0%   { box-shadow: 0 0 0 0 var(--cor-banco-brilho), var(--sombra); background-color: var(--superficie); }
+  25%  { box-shadow: 0 0 0 6px var(--cor-banco-brilho), var(--sombra); background-color: var(--cor-banco-suave); }
+  100% { box-shadow: 0 0 0 14px transparent, var(--sombra); background-color: var(--superficie); }
+}
+
+.numero-mudou {
+  animation: pular-numero .9s ease-out;
+}
+
+@keyframes pular-numero {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.18); color: var(--coral); }
+  100% { transform: scale(1); }
+}
+
+/* ========================= RODAPÉ: NEO4J BROWSER ========================= */
+
+.rodape-monitor {
+  margin-top: 2.5rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: var(--raio);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-left: 6px solid var(--cor-neo4j);
+  box-shadow: var(--sombra);
+}
+
+.rodape-monitor h2 {
+  margin: 0 0 .35rem;
+  font-size: 1.25rem;
+  color: var(--verde);
+}
+
+.rodape-monitor > p {
+  margin: 0 0 .5rem;
+  color: var(--texto-suave);
+}
+
+.passos-browser {
+  margin: .5rem 0 .9rem;
+  padding-left: 1.3rem;
+  line-height: 1.8;
+}
+
+.passos-browser a {
+  color: var(--cor-neo4j);
+  font-weight: 600;
+}
+
+.passos-browser code {
+  padding: .05rem .35rem;
+  border-radius: 6px;
+  background: var(--superficie-2);
+}
+
+.bloco-consulta {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+
+.bloco-consulta pre {
+  flex: 1 1 320px;
+  min-width: 0;
+  margin: 0;
+  padding: .75rem 1rem;
+  border-radius: 10px;
+  background: var(--texto);
+  color: #cfe6ff;
+  overflow-x: auto;
+  font-size: .85rem;
+}
+
+.bloco-consulta pre code { font-size: inherit; }
+
+.rodape-monitor .rodape-extra {
+  margin: 1rem 0 .5rem;
+  font-size: .88rem;
+}
+
+/* ================================ RESPONSIVO ================================ */
+
+@media (max-width: 1080px) {
+  .grade-acoes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grade-bancos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* com 2 colunas, o terceiro cartão ocupa a linha toda em vez de ficar sozinho pela metade */
+  .grade-bancos .cartao-banco:last-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 760px) {
+  .intro-monitor,
+  .rodape-monitor { padding: 1.2rem 1rem; }
+  .legenda-bancos,
+  .grade-acoes,
+  .grade-bancos { grid-template-columns: 1fr; }
+  .grade-bancos .cartao-banco:last-child { grid-column: auto; }
+  .numero-grande { font-size: 2.5rem; }
+  .indicador-vivo { font-size: .78rem; }
+}
+
+/* quem pediu menos movimento no sistema operacional não leva piscadas nem pulsos */
+@media (prefers-reduced-motion: reduce) {
+  .indicador-ponto,
+  .luz-status,
+  .registro-linha,
+  .cartao-banco.cartao-piscando,
+  .numero-mudou,
+  .acao-demo[aria-busy="true"]::after {
+    animation: none !important;
+  }
+  .acao-demo,
+  .barra-preenchida { transition: none; }
+}

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Monitor ao vivo dos três bancos da Ludoteca: PostgreSQL, MongoDB e Neo4j.">
+  <title>Ludoteca — Monitor dos Bancos</title>
+  <!-- favicon em SVG embutido: evita um 404 de /favicon.ico no log do nginx -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%B0%EF%B8%8F%3C/text%3E%3C/svg%3E">
+  <!-- primeiro o tema base (compartilhado com o app), depois só o que é do monitor -->
+  <link rel="stylesheet" href="estilo.css">
+  <link rel="stylesheet" href="monitor.css">
+</head>
+<body>
+
+  <!-- mesmo cabeçalho do app principal, pra parecer uma página só -->
+  <header class="topo">
+    <a class="marca" href="index.html#/"><span class="marca-icone">🎲</span><span class="marca-nome">Ludoteca</span></a>
+    <nav class="menu" aria-label="Navegação do monitor">
+      <a class="menu-link" href="index.html#/">← Voltar à Ludoteca</a>
+      <span class="indicador-vivo" id="indicador-vivo" data-saude="iniciando" title="Aguardando a primeira rodada de consultas">
+        <span class="indicador-ponto" aria-hidden="true"></span>
+        <span id="indicador-texto">Conectando…</span>
+      </span>
+    </nav>
+    <div class="area-conta" id="area-conta"></div>
+  </header>
+
+  <main class="conteudo monitor">
+
+    <!-- 1. INTRODUÇÃO ===================================================== -->
+    <section class="intro-monitor" aria-labelledby="titulo-monitor">
+      <p class="sobretitulo">🛰️ Monitor dos Bancos</p>
+      <h1 id="titulo-monitor">Persistência poliglota ao vivo</h1>
+      <p class="intro-texto">
+        A Ludoteca não guarda tudo num banco só: são <strong>três bancos diferentes</strong>, e cada um
+        ficou com a parte do sistema cujo formato de dado combina com ele. Esta página consulta as três
+        APIs <strong>a cada 3 segundos</strong> e mostra o que está gravado em cada banco neste momento.
+      </p>
+
+      <ul class="legenda-bancos">
+        <li class="legenda-item banco-postgres">
+          <strong>PostgreSQL · relacional</strong>
+          <span>Contas, favoritos e visualizações. Precisa de e-mail único, chaves estrangeiras e
+            <code>COUNT</code>/<code>GROUP BY</code> pro ranking.</span>
+        </li>
+        <li class="legenda-item banco-mongo">
+          <strong>MongoDB · documentos</strong>
+          <span>O catálogo de jogos. Cada jogo tem uma “ficha” diferente (expansões, listas de
+            mecânicas, faixa de jogadores aninhada), e documento aceita isso sem migração.</span>
+        </li>
+        <li class="legenda-item banco-neo4j">
+          <strong>Neo4j · grafo</strong>
+          <span>As afinidades. “Jogos parecidos” é andar pelas ligações jogo → mecânica/designer → jogo,
+            coisa que no relacional viraria um monte de JOIN.</span>
+        </li>
+      </ul>
+
+      <p class="dica-apresentacao">
+        💡 <strong>Teste de independência:</strong> rode <code>docker compose stop mongodb</code> e veja só o
+        cartão do MongoDB ficar offline. Depois <code>docker compose start mongodb</code> e ele volta sozinho.
+      </p>
+    </section>
+
+    <!-- 2. AÇÕES DE DEMONSTRAÇÃO ========================================== -->
+    <section class="secao-monitor" aria-labelledby="titulo-acoes">
+      <div class="secao-cabecalho">
+        <h2 id="titulo-acoes">⚡ Ações de demonstração</h2>
+        <p>Cada botão chama uma rota de verdade. Os números dos cartões lá embaixo mudam na próxima atualização.</p>
+      </div>
+
+      <div class="grade-acoes">
+        <button type="button" class="acao-demo banco-postgres" data-acao="cadastrar-jogador">
+          <span class="acao-icone" aria-hidden="true">👤</span>
+          <span class="acao-corpo">
+            <span class="acao-titulo">Cadastrar jogador de teste</span>
+            <span class="acao-rota">POST :4001/cadastro → PostgreSQL</span>
+          </span>
+        </button>
+
+        <button type="button" class="acao-demo banco-mongo" data-acao="cadastrar-jogo">
+          <span class="acao-icone" aria-hidden="true">🧩</span>
+          <span class="acao-corpo">
+            <span class="acao-titulo">Cadastrar jogo de teste</span>
+            <span class="acao-rota">POST :4002/jogos → MongoDB (+ grafo atualizado sozinho)</span>
+          </span>
+        </button>
+
+        <button type="button" class="acao-demo banco-postgres" data-acao="simular-visualizacao">
+          <span class="acao-icone" aria-hidden="true">👁</span>
+          <span class="acao-corpo">
+            <span class="acao-titulo">Simular visualização</span>
+            <span class="acao-rota">POST :4001/visualizacoes → PostgreSQL (ranking)</span>
+          </span>
+        </button>
+
+        <button type="button" class="acao-demo banco-neo4j" data-acao="reconstruir-grafo">
+          <span class="acao-icone" aria-hidden="true">🕸️</span>
+          <span class="acao-corpo">
+            <span class="acao-titulo">Reconstruir grafo</span>
+            <span class="acao-rota">POST :4003/sync → Neo4j</span>
+          </span>
+        </button>
+      </div>
+
+      <div class="console-monitor">
+        <div class="console-barra">
+          <span class="console-titulo">Console de eventos <small>(mais recente em cima)</small></span>
+          <button type="button" class="console-limpar" id="botao-limpar-registro">Limpar</button>
+        </div>
+        <ol class="registro-eventos" id="registro-eventos" role="log" aria-live="polite" aria-relevant="additions"></ol>
+      </div>
+    </section>
+
+    <!-- 3. CARTÕES DOS BANCOS ============================================= -->
+    <section class="secao-monitor" aria-labelledby="titulo-bancos">
+      <div class="secao-cabecalho">
+        <h2 id="titulo-bancos">📡 Os três bancos agora</h2>
+        <p>Cada cartão se atualiza sozinho: se um banco cair, os outros dois continuam funcionando.</p>
+      </div>
+
+      <div class="grade-bancos">
+
+        <!-- PostgreSQL -->
+        <article class="cartao-banco banco-postgres" id="cartao-postgres" aria-labelledby="nome-postgres">
+          <header class="cartao-cabeca">
+            <span class="cartao-icone" aria-hidden="true">🐘</span>
+            <div class="cartao-identidade">
+              <h3 id="nome-postgres">PostgreSQL</h3>
+              <span class="cartao-tipo">Relacional</span>
+            </div>
+            <span class="luz-status" id="luz-postgres" data-estado="verificando" role="img"
+                  aria-label="Verificando conexão" title="Verificando conexão…"></span>
+          </header>
+          <p class="cartao-papel">servico-jogadores · contas, favoritos e visualizações</p>
+
+          <div class="numero-destaque">
+            <span class="numero-grande" id="pg-jogadores">—</span>
+            <span class="numero-legenda">jogadores cadastrados</span>
+          </div>
+          <div class="mini-estatisticas">
+            <div class="mini-estatistica"><strong id="pg-visualizacoes">—</strong><span>visualizações</span></div>
+            <div class="mini-estatistica"><strong id="pg-favoritos">—</strong><span>favoritos</span></div>
+          </div>
+
+          <h4 class="cartao-subtitulo">Últimos jogadores</h4>
+          <ul class="lista-dados" id="pg-ultimos"><li class="dado-aguardando">Consultando…</li></ul>
+
+          <h4 class="cartao-subtitulo">Top 5 mais vistos</h4>
+          <ol class="lista-dados lista-ranking" id="pg-ranking"><li class="dado-aguardando">Consultando…</li></ol>
+
+          <footer class="rodape-cartao">
+            <code>GET :4001/estatisticas</code>
+            <span class="tempo-resposta" id="pg-tempo"></span>
+          </footer>
+        </article>
+
+        <!-- MongoDB -->
+        <article class="cartao-banco banco-mongo" id="cartao-mongo" aria-labelledby="nome-mongo">
+          <header class="cartao-cabeca">
+            <span class="cartao-icone" aria-hidden="true">🍃</span>
+            <div class="cartao-identidade">
+              <h3 id="nome-mongo">MongoDB</h3>
+              <span class="cartao-tipo">Documentos</span>
+            </div>
+            <span class="luz-status" id="luz-mongo" data-estado="verificando" role="img"
+                  aria-label="Verificando conexão" title="Verificando conexão…"></span>
+          </header>
+          <p class="cartao-papel">servico-acervo · catálogo de jogos</p>
+
+          <div class="numero-destaque">
+            <span class="numero-grande" id="mg-total">—</span>
+            <span class="numero-legenda">jogos no acervo</span>
+          </div>
+          <div class="mini-estatisticas">
+            <div class="mini-estatistica"><strong id="mg-categorias">—</strong><span>categorias em uso</span></div>
+            <div class="mini-estatistica"><strong id="mg-maior" class="texto-curto">—</strong><span>maior categoria</span></div>
+          </div>
+
+          <h4 class="cartao-subtitulo">Por categoria</h4>
+          <ul class="lista-dados lista-barras" id="mg-categorias-lista"><li class="dado-aguardando">Consultando…</li></ul>
+
+          <h4 class="cartao-subtitulo">Últimos cadastrados</h4>
+          <ul class="lista-dados" id="mg-ultimos"><li class="dado-aguardando">Consultando…</li></ul>
+
+          <footer class="rodape-cartao">
+            <code>GET :4002/estatisticas</code>
+            <span class="tempo-resposta" id="mg-tempo"></span>
+          </footer>
+        </article>
+
+        <!-- Neo4j -->
+        <article class="cartao-banco banco-neo4j" id="cartao-neo4j" aria-labelledby="nome-neo4j">
+          <header class="cartao-cabeca">
+            <span class="cartao-icone" aria-hidden="true">🕸️</span>
+            <div class="cartao-identidade">
+              <h3 id="nome-neo4j">Neo4j</h3>
+              <span class="cartao-tipo">Grafo</span>
+            </div>
+            <span class="luz-status" id="luz-neo4j" data-estado="verificando" role="img"
+                  aria-label="Verificando conexão" title="Verificando conexão…"></span>
+          </header>
+          <p class="cartao-papel">servico-afinidades · jogos parecidos</p>
+
+          <div class="numero-destaque">
+            <span class="numero-grande" id="neo-jogos">—</span>
+            <span class="numero-legenda">nós <code>:Jogo</code> no grafo</span>
+          </div>
+          <div class="mini-estatisticas">
+            <div class="mini-estatistica"><strong id="neo-mecanicas">—</strong><span>mecânicas</span></div>
+            <div class="mini-estatistica"><strong id="neo-designers">—</strong><span>designers</span></div>
+            <div class="mini-estatistica"><strong id="neo-relacoes">—</strong><span>relações</span></div>
+          </div>
+
+          <h4 class="cartao-subtitulo">Mecânicas mais conectadas</h4>
+          <ul class="lista-dados lista-barras" id="neo-populares"><li class="dado-aguardando">Consultando…</li></ul>
+
+          <footer class="rodape-cartao">
+            <code>GET :4003/grafo/resumo</code>
+            <span class="tempo-resposta" id="neo-tempo"></span>
+          </footer>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- 4. RODAPÉ: NEO4J BROWSER ========================================== -->
+    <section class="rodape-monitor" aria-labelledby="titulo-browser">
+      <h2 id="titulo-browser">🔍 Quer ver o grafo desenhado?</h2>
+      <p>O Neo4j vem com uma interface web própria, ótima pra mostrar as ligações na apresentação.</p>
+
+      <ol class="passos-browser">
+        <li>
+          Abra o <strong>Neo4j Browser</strong> em
+          <a id="link-neo4j-browser" href="http://localhost:7474" target="_blank" rel="noopener noreferrer">http://localhost:7474</a>
+        </li>
+        <li>Entre com usuário <code>neo4j</code> e senha <code>ludoteca123</code></li>
+        <li>Rode a consulta abaixo e arraste os nós pra explorar:</li>
+      </ol>
+
+      <div class="bloco-consulta">
+        <pre id="consulta-grafo"><code>MATCH (j:Jogo)-[r]-&gt;(x) RETURN j, r, x</code></pre>
+        <button type="button" class="botao botao-pequeno botao-contorno" data-copiar="consulta-grafo">Copiar consulta</button>
+      </div>
+
+      <p class="rodape-extra">Bônus — os vizinhos de Catan que fazem ele “parecido” com outros jogos:</p>
+      <div class="bloco-consulta">
+        <pre id="consulta-vizinhos"><code>MATCH (j:Jogo {nome: 'Catan'})-[:USA_MECANICA|CRIADO_POR]-&gt;(x)&lt;-[:USA_MECANICA|CRIADO_POR]-(outro:Jogo) RETURN j, x, outro</code></pre>
+        <button type="button" class="botao botao-pequeno botao-contorno" data-copiar="consulta-vizinhos">Copiar consulta</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- config.js primeiro: ele define window.LUDOTECA_API, que o monitor.js lê -->
+  <script src="config.js"></script>
+  <script src="monitor.js"></script>
+</body>
+</html>
