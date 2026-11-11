@@ -1,0 +1,19 @@
+{
+  "name": "servico-acervo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Catálogo de jogos de tabuleiro da Ludoteca (Node + MongoDB)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "seed": "node seed.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "mongoose": "^8.9.5"
+  }
+}
