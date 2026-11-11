@@ -1,0 +1,15 @@
+# dependências: cada serviço reinstala as suas dentro do container (npm install no Dockerfile),
+# então não faz sentido versionar milhares de arquivos de node_modules
+node_modules/
+npm-debug.log*
+
+# variáveis de ambiente locais (senhas, segredos) nunca vão pro repositório
+.env
+
+# lixo que o sistema operacional cria sozinho
+.DS_Store
+Thumbs.db
+
+# configurações pessoais de editor
+.vscode/
+.idea/

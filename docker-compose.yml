@@ -1,0 +1,171 @@
+# =============================================================================
+# Ludoteca — persistência poliglota com PostgreSQL + MongoDB + Neo4j
+# =============================================================================
+#
+# Como rodar (em qualquer máquina com Docker instalado, na pasta deste arquivo):
+#
+#   1) docker compose up --build -d                  -> sobe os 3 bancos, as 3 APIs e o site
+#   2) docker compose exec acervo-api npm run seed   -> carrega os 15 jogos e monta o grafo
+#   3) abrir http://localhost:8080                   -> app da Ludoteca
+#      abrir http://localhost:8080/monitor.html      -> monitor dos bancos ao vivo
+#
+# Ordem de subida: primeiro os bancos, depois as APIs, por último o site.
+# O "depends_on" com "condition: service_healthy" faz a API esperar o banco
+# estar PRONTO de verdade (respondendo ao healthcheck), e não só com o
+# container criado — senão a API tentaria conectar num banco ainda iniciando.
+#
+# Obs.: não tem a chave "version:" no topo de propósito; o Compose atual
+# ignora ela e só mostra um aviso de obsoleta.
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # BANCOS DE DADOS
+  # ---------------------------------------------------------------------------
+
+  # Relacional: contas de jogador, favoritos e visualizações (ranking).
+  # Escolhido por causa do e-mail único, das chaves estrangeiras com cascata
+  # e das agregações COUNT/GROUP BY que o ranking precisa.
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ludoteca
+      POSTGRES_USER: ludoteca
+      POSTGRES_PASSWORD: ludoteca123
+    ports:
+      - "5432:5432"
+    volumes:
+      # volume nomeado: os dados sobrevivem a "docker compose down" (só somem com "down -v")
+      - dados_postgres:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready é o utilitário oficial pra perguntar "já aceita conexões?"
+      test: ["CMD-SHELL", "pg_isready -U ludoteca -d ludoteca"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  # Documentos: o catálogo de jogos. Cada jogo tem uma ficha diferente
+  # (expansões, listas de mecânicas e designers de tamanhos variados...),
+  # e o modelo de documento guarda isso sem precisar de tabela extra nem migração.
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - dados_mongo:/data/db
+    healthcheck:
+      # um ping no servidor: se o mongosh nem conseguir conectar, sai com erro
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  # Grafo: as afinidades entre jogos (Jogo -> Mecânica/Designer <- Jogo).
+  # Porta 7474 = Neo4j Browser (interface web pra desenhar o grafo na apresentação)
+  # Porta 7687 = protocolo Bolt, que é o que o driver do Node usa.
+  neo4j:
+    image: neo4j:5.26-community
+    environment:
+      NEO4J_AUTH: neo4j/ludoteca123
+      # tuning de memória: sem limite o Neo4j tenta abocanhar boa parte da RAM da máquina.
+      # heap = memória da JVM pra executar as consultas;
+      # pagecache = cache do arquivo do grafo em memória (nosso grafo é pequeno, 256m sobra).
+      # (o "__" duplo vira "_" no nome da configuração: server.memory.heap.max_size)
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - dados_neo4j:/data
+    healthcheck:
+      # o Neo4j demora mais pra subir (é uma JVM), por isso intervalo maior,
+      # mais tentativas e um start_period de 30s antes de começar a contar falha
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # APIs (Node 20 + Express) — uma por banco
+  # ---------------------------------------------------------------------------
+  # "restart: on-failure": se a API cair na inicialização (ex.: banco ainda
+  # aquecendo), o Docker sobe ela de novo sozinho em vez de deixar parada.
+  # Dentro da rede do compose, cada serviço enxerga o outro pelo NOME
+  # (postgres, mongodb, neo4j, acervo-api...), não por localhost.
+
+  # servico-jogadores: cadastro/login (bcrypt + JWT), favoritos, histórico e ranking
+  jogadores-api:
+    build: ./servicos/servico-jogadores
+    environment:
+      DATABASE_URL: postgresql://ludoteca:ludoteca123@postgres:5432/ludoteca
+      PORT: "4001"
+      JWT_SEGREDO: ludoteca_jwt_segredo_2026
+    ports:
+      - "4001:4001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  # servico-acervo: CRUD do catálogo de jogos. A cada jogo criado/editado/apagado
+  # ele avisa o servico-afinidades pra manter o grafo em dia.
+  acervo-api:
+    build: ./servicos/servico-acervo
+    environment:
+      MONGO_URL: mongodb://mongodb:27017/ludoteca
+      AFINIDADES_URL: http://afinidades-api:4003
+      PORT: "4002"
+    ports:
+      - "4002:4002"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: on-failure
+
+  # servico-afinidades: "jogos parecidos" percorrendo o grafo no Neo4j.
+  # Ele lê a lista de jogos do acervo pra montar o grafo. O acervo-api não tem
+  # healthcheck, então aqui dá pra esperar só "started"; se o acervo ainda não
+  # responder no primeiro sync, a API só registra o aviso e o grafo pode ser
+  # reconstruído depois (POST /sync, ou o botão "Reconstruir grafo" do monitor).
+  afinidades-api:
+    build: ./servicos/servico-afinidades
+    environment:
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USUARIO: neo4j
+      NEO4J_SENHA: ludoteca123
+      ACERVO_URL: http://acervo-api:4002
+      PORT: "4003"
+    ports:
+      - "4003:4003"
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      acervo-api:
+        condition: service_started
+    restart: on-failure
+
+  # ---------------------------------------------------------------------------
+  # FRONTEND (nginx servindo arquivos estáticos)
+  # ---------------------------------------------------------------------------
+  # Porta 8080 da máquina -> 80 do nginx. O JavaScript roda no NAVEGADOR,
+  # por isso o config.js aponta pras APIs em localhost:4001/4002/4003
+  # (as portas publicadas acima), e não pelos nomes internos do compose.
+  web:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - jogadores-api
+      - acervo-api
+      - afinidades-api
+
+# volumes nomeados: o Docker guarda os dados de cada banco fora dos containers
+volumes:
+  dados_postgres:
+  dados_mongo:
+  dados_neo4j:

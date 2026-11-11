@@ -1,0 +1,3 @@
+# mantém quebra de linha LF em todos os arquivos de texto, inclusive pra quem
+# clonar no Windows. Os containers são Linux, então assim nada chega com CRLF neles
+* text=auto eol=lf
