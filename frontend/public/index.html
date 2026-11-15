@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Ludoteca: catálogo de jogos de tabuleiro com persistência poliglota (PostgreSQL, MongoDB e Neo4j).">
+  <meta name="theme-color" content="#1f4d3a">
+  <title>Ludoteca</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+  <header class="topo">
+    <a class="marca" href="index.html#/"><span class="marca-icone">🎲</span><span class="marca-nome">Ludoteca</span></a>
+    <nav class="menu" aria-label="Navegação principal">
+      <a class="menu-link" href="#/" data-rota="inicio">Início</a>
+      <a class="menu-link" href="#/jogos" data-rota="jogos">Jogos</a>
+      <a class="menu-link" href="#/jogos/novo" data-rota="novo" data-somente-logado hidden>+ Novo jogo</a>
+      <a class="menu-link" href="#/favoritos" data-rota="favoritos" data-somente-logado hidden>Favoritos</a>
+      <a class="menu-link" href="#/historico" data-rota="historico" data-somente-logado hidden>Histórico</a>
+      <a class="menu-link menu-link-destaque" href="monitor.html">Monitor</a>
+    </nav>
+    <div class="area-conta" id="area-conta"></div>
+  </header>
+
+  <main id="app" class="conteudo">
+    <div class="carregando" role="status">
+      <span class="roleta" aria-hidden="true"></span>
+      <span>Carregando...</span>
+    </div>
+  </main>
+
+  <footer class="rodape">
+    <p>Ludoteca · Performance e Tuning de Dados · FEI</p>
+    <p class="rodape-bancos">
+      <span>🐘 PostgreSQL</span><span>🍃 MongoDB</span><span>🕸️ Neo4j</span>
+    </p>
+  </footer>
+
+  <noscript>
+    <p class="vazio">Ative o JavaScript para usar a Ludoteca.</p>
+  </noscript>
+
+  <script src="config.js"></script>
+  <script src="ludoteca.js"></script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ludoteca
+      POSTGRES_USER: ludoteca
+      POSTGRES_PASSWORD: ludoteca123
+    ports:
+      - "5432:5432"
+    volumes:
+      - dados_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ludoteca -d ludoteca"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - dados_mongo:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  neo4j:
+    image: neo4j:5.26-community
+    environment:
+      NEO4J_AUTH: neo4j/ludoteca123
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - dados_neo4j:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  jogadores-api:
+    build: ./servicos/servico-jogadores
+    environment:
+      DATABASE_URL: postgresql://ludoteca:ludoteca123@postgres:5432/ludoteca
+      PORT: "4001"
+      JWT_SEGREDO: ludoteca_jwt_segredo_2026
+    ports:
+      - "4001:4001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  acervo-api:
+    build: ./servicos/servico-acervo
+    environment:
+      MONGO_URL: mongodb://mongodb:27017/ludoteca
+      AFINIDADES_URL: http://afinidades-api:4003
+      PORT: "4002"
+    ports:
+      - "4002:4002"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: on-failure
+
+  afinidades-api:
+    build: ./servicos/servico-afinidades
+    environment:
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USUARIO: neo4j
+      NEO4J_SENHA: ludoteca123
+      ACERVO_URL: http://acervo-api:4002
+      PORT: "4003"
+    ports:
+      - "4003:4003"
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      acervo-api:
+        condition: service_started
+    restart: on-failure
+
+  web:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - jogadores-api
+      - acervo-api
+      - afinidades-api
+
+  adminer:
+    image: adminer:4.8.1
+    ports:
+      - "8082:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  mongo-express:
+    image: mongo-express:1.0.2
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017/
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: on-failure
+
+volumes:
+  dados_postgres:
+  dados_mongo:
+  dados_neo4j:
